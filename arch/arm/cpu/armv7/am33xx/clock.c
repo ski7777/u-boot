@@ -42,8 +42,8 @@ static inline void wait_for_lock(const struct dpll_regs *dpll_regs)
 {
 	if (!wait_on_value(ST_DPLL_CLK_MASK, ST_DPLL_CLK_MASK,
 			   (void *)dpll_regs->cm_idlest_dpll, LDELAY)) {
-		printf("DPLL locking failed for 0x%x\n",
-		       dpll_regs->cm_clkmode_dpll);
+		printf("DPLL locking failed for 0x%x LDELAY %d\n",
+		       dpll_regs->cm_clkmode_dpll, LDELAY);
 		hang();
 	}
 }
@@ -101,13 +101,21 @@ void do_setup_dpll(const struct dpll_regs *dpll_regs,
 static void setup_dplls(void)
 {
 	const struct dpll_params *params;
-	do_setup_dpll(&dpll_core_regs, &dpll_core);
-	do_setup_dpll(&dpll_mpu_regs, &dpll_mpu);
-	do_setup_dpll(&dpll_per_regs, &dpll_per);
+
+	params = get_dpll_core_params();
+	do_setup_dpll(&dpll_core_regs, params);
+
+	params = get_dpll_mpu_params();
+	do_setup_dpll(&dpll_mpu_regs, params);
+
+	params = get_dpll_per_params();
+	do_setup_dpll(&dpll_per_regs, params);
 	writel(0x300, &cmwkup->clkdcoldodpllper);
 
 	params = get_dpll_ddr_params();
+	printf(">>> %s vor do_setup_dpll\n", __func__);
 	do_setup_dpll(&dpll_ddr_regs, params);
+	printf(">>> %s nach do_setup_dpll\n", __func__);
 }
 
 static inline void wait_for_clk_enable(u32 *clkctrl_addr)
